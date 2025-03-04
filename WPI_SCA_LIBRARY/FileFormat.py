@@ -462,12 +462,12 @@ class Experiment:
             dataset_name = sanitize_input(dataset_name)
             return self.dataset[dataset_name]    
 
-    def delete_dataset(self, dataset_name: str) -> None:
+    def delete_dataset_partition(self, dataset_name: str, partition:bool, index:int, start_index:int, end_index:int) -> None:
         """
         Deletes a dataset and all its contents. Confirmation required.
         :param dataset_name: The name of the dataset to be deleted
         :type dataset_name: str
-        :returns: None
+        :returns: None have to put it in for loop to do this for all of the partitions
         """
         dataset_name = sanitize_input(dataset_name)
         res = sanitize_input(input(
@@ -489,6 +489,28 @@ class Experiment:
 
         else:
             print("Deletion of experiment {} cancelled.".format(dataset_name))
+
+    def delete_dataset(self, dataset_name: str,  partition:bool, index:int, start_index:int, end_index:int) -> None:
+            """
+            Deletes a dataset and all its contents. Confirmation required.
+            :param dataset_name: The name of the dataset to be deleted
+            :type dataset_name: str
+            :returns: None have to put it in for loop to do this for all of the partitions
+            """
+
+            if start_index is None:
+                    start_index = 0
+            if end_index is None:
+                    end_index = -1
+
+            if partition:
+                if index is not None:
+                    self.delete_dataset_partition(dataset_name=f"{dataset_name}_p{index}")
+                else:
+                    for i in range(start_index, end_index + 1):
+                        self.delete_dataset_partition(dataset_name=f"{dataset_name}_p{i}")
+            else:
+                self.delete_dataset_partition(dataset_name=dataset_name)
 
     def query_datasets_with_metadata(self, key: str, value: any, regex: bool = False) -> list['Dataset']:
         """
@@ -523,7 +545,7 @@ class Experiment:
         """
         return self.fileFormatParent.path + self.path + "\\" + "visualization" + "\\"
 
-    def calculate_snr(self, traces_dataset: str, intermediate_fcn: Callable, *args: any,  visualize: bool = False, save_data: bool = False, save_graph: bool = False) -> np.ndarray:
+    def calculate_snr(self, traces_dataset: str, partition:bool, index:int, start_index:int, end_index:int,intermediate_fcn: Callable, *args: any,  visualize: bool = False, save_data: bool = False, save_graph: bool = False) -> np.ndarray:
         """
         Integrated signal-to-noise ratio metric.
         :param traces_dataset: The name of the traces dataset
@@ -541,11 +563,17 @@ class Experiment:
         :returns: The SNR metric result
         :rtype: np.ndarray
         """
-
-        traces_dataset = sanitize_input(traces_dataset)
+        
+        traces_dataset = sanitize_input(traces_dataset) 
         args = tuple(self.dataset[sanitize_input(x)].read_all() for x in args)
+        if partition:
+            if index is not None:
+                traces_dataset = self.get_dataset(traces_dataset, partition=True, index=index)
+            else:
+                traces_dataset = self.get_dataset(traces_dataset, partition=True, start_index=start_index, end_index=end_index)
+        else:
+            traces = self.dataset[traces_dataset].read_all()
 
-        traces = self.dataset[traces_dataset].read_all()
         labels = organize_snr_label(traces, intermediate_fcn, *args)
 
         if save_graph:
@@ -569,9 +597,13 @@ class Experiment:
         snr = signal_to_noise_ratio(labels, visualize=visualize, visualization_path=path)
 
         if save_data:
-            self.add_dataset("{}_snr".format(traces_dataset), snr, "float32")
+            if partition:
+                self.add_dataset("{}_snr".format(traces_dataset), snr, datatype="float32", partition=True, trace_per_partition=len(traces_dataset))
+            else:
+                self.add_dataset("{}_snr".format(traces_dataset), snr, "float32")
 
         return snr
+
 
     def calculate_t_test(self, fixed_dataset: str, random_dataset: str, visualize: bool = False, save_data: bool = False, save_graph: bool = False) -> (np.ndarray, np.ndarray):
         """
@@ -635,7 +667,7 @@ class Experiment:
 
         return t, t_max
 
-    def calculate_correlation(self, predicted_dataset_name: str, observed_dataset_name: str, visualize: bool = False, save_data: bool = False, save_graph: bool = False) -> np.ndarray:
+    def calculate_correlation(self, predicted_dataset_name: str, partition:bool, index:int, start_index:int, end_index:int, observed_dataset_name: str, visualize: bool = False, save_data: bool = False, save_graph: bool = False) -> np.ndarray:
         """
         Integrated correlation metric.
         :param predicted_dataset_name: The name of the dataset containing the predicted leakage
@@ -651,9 +683,16 @@ class Experiment:
         :returns: The correlation metric result
         :rtype: np.ndarray
         """
-
-        predicted = self.get_dataset(predicted_dataset_name).read_all()
-        observed = self.get_dataset(observed_dataset_name).read_all()
+        if partition:
+            if index is not None:
+                predicted = self.get_dataset(predicted_dataset_name, partition=True, index=index)
+                observed = self.get_dataset(observed_dataset_name, partition=True, index=index)
+            else:
+                predicted = self.get_dataset(predicted_dataset_name, partition=True, start_index=start_index, end_index=end_index)
+                observed = self.get_dataset(observed_dataset_name, partition=True, start_index=start_index, end_index=end_index)
+        else:
+            predicted = self.get_dataset(predicted_dataset_name).read_all()
+            observed = self.get_dataset(observed_dataset_name).read_all()
 
         if save_graph:
             path_created = False
@@ -676,7 +715,12 @@ class Experiment:
         corr = pearson_correlation(predicted, observed, visualize=visualize, visualization_path=path)
 
         if save_data:
-            self.add_dataset(f"corr_{predicted_dataset_name}_{observed_dataset_name}", corr, datatype="float32")
+            if partition:
+                self.add_dataset(f"corr_{predicted_dataset_name}", corr, datatype="float32",partition=True, trace_per_partition=len(predicted_dataset_name))
+                self.add_dataset(f"corr_{observed_dataset_name}", corr, datatype="float32",partition=True, trace_per_partition=len(observed_dataset_name))
+
+            else:
+                self.add_dataset(f"corr_{predicted_dataset_name}_{observed_dataset_name}", corr, datatype="float32")
 
         return corr
 
