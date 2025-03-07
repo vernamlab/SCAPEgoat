@@ -597,10 +597,7 @@ class Experiment:
         snr = signal_to_noise_ratio(labels, visualize=visualize, visualization_path=path)
 
         if save_data:
-            if partition:
-                self.add_dataset("{}_snr".format(traces_dataset), snr, datatype="float32", partition=True, trace_per_partition=len(traces_dataset))
-            else:
-                self.add_dataset("{}_snr".format(traces_dataset), snr, "float32")
+            self.add_dataset("{}_snr".format(traces_dataset), snr, "float32")
 
         return snr
 
@@ -672,14 +669,9 @@ class Experiment:
 
 
 
-        if save_data: #remove partition from saving
-            if partition:
-                self.add_dataset(f"t_test_{random_dataset}_{fixed_dataset}", t, datatype="float32",partition=True, trace_per_partition=len(fixed_dataset))
-                self.add_dataset(f"t_max_{random_dataset}_{fixed_dataset}", t_max, datatype="float32",partition=True, trace_per_partition=len(fixed_dataset))
-
-            else:
-                self.add_dataset(f"t_test_{random_dataset}_{fixed_dataset}", t, datatype="float32")
-                self.add_dataset(f"t_max_{random_dataset}_{fixed_dataset}", t_max, datatype="float32")
+        if save_data:
+            self.add_dataset(f"t_test_{random_dataset}_{fixed_dataset}", t, datatype="float32")
+            self.add_dataset(f"t_max_{random_dataset}_{fixed_dataset}", t_max, datatype="float32")
 
         return t, t_max
 
@@ -732,12 +724,7 @@ class Experiment:
         corr = pearson_correlation(predicted, observed, visualize=visualize, visualization_path=path)
 
         if save_data:
-            if partition:
-                self.add_dataset(f"corr_{predicted_dataset_name}", corr, datatype="float32",partition=True, trace_per_partition=len(predicted_dataset_name))
-                self.add_dataset(f"corr_{observed_dataset_name}", corr, datatype="float32",partition=True, trace_per_partition=len(observed_dataset_name))
-
-            else:
-                self.add_dataset(f"corr_{predicted_dataset_name}_{observed_dataset_name}", corr, datatype="float32")
+            self.add_dataset(f"corr_{predicted_dataset_name}_{observed_dataset_name}", corr, datatype="float32")
 
         return corr
 
