@@ -101,7 +101,7 @@ def unmasked_sbox_output_intermediate(keys: np.ndarray, plaintexts: np.ndarray) 
     return Sbox[keys ^ plaintexts]
 
 
-def t_test_tvla(fixed_t: np.ndarray, random_t: np.ndarray, visualize: bool = False,
+def t_test_tvla(fixed_t: np.ndarray, random_t: np.ndarray,  exp:any ,partition:bool, fixed_path:str, random_path:str,start_index:int, end_index:int,visualize: bool = False,
                 visualization_paths: tuple = None) -> (np.ndarray, np.ndarray):
     """
     Computes the t-statistic and t-max between fixed and random trace sets. T-statistic magnitudes above or below
@@ -126,6 +126,7 @@ def t_test_tvla(fixed_t: np.ndarray, random_t: np.ndarray, visualize: bool = Fal
     new_sf_outer = []
     new_sr_outer = []
     t_max_outer = []
+    number =0
     fixed_t = np.array(fixed_t, dtype=np.float64)
     random_t = np.array(random_t, dtype=np.float64)
 
@@ -164,13 +165,29 @@ def t_test_tvla(fixed_t: np.ndarray, random_t: np.ndarray, visualize: bool = Fal
                 welsh_t = 0
 
             return welsh_t, new_mr, new_mf, new_sf, new_sr
+    if partition:
+        for index in range(start_index, end_index + 1):
+            fixed_t = exp.self.get_dataset(fixed_path, partition=True, index=index)
+            random_t = exp.self.get_dataset(random_path, partition=True, index=index)
+            
+            for i in tqdm(range(len(random_t)), desc="Calculating T-Test"):
+                welsh_t_outer, new_mr_outer, new_mf_outer, new_sf_outer, new_sr_outer = (
+                    t_test_intermediate(new_mf_outer, new_mr_outer, new_sf_outer, new_sr_outer, fixed_t[i], random_t[i], number))
 
-    for i in tqdm(range(len(random_t)), desc="Calculating T-Test"):
-        welsh_t_outer, new_mr_outer, new_mf_outer, new_sf_outer, new_sr_outer = (
-            t_test_intermediate(new_mf_outer, new_mr_outer, new_sf_outer, new_sr_outer, fixed_t[i], random_t[i], i))
+                if i > 5:  # remove edge effects
+                    t_max_outer.append(max(abs(welsh_t_outer)))
+                
+                number = number + 1
 
-        if i > 5:  # remove edge effects
-            t_max_outer.append(max(abs(welsh_t_outer)))
+            np.delete fixed_t
+            np.delete random_t
+    else:
+        for i in tqdm(range(len(random_t)), desc="Calculating T-Test"):
+            welsh_t_outer, new_mr_outer, new_mf_outer, new_sf_outer, new_sr_outer = (
+                t_test_intermediate(new_mf_outer, new_mr_outer, new_sf_outer, new_sr_outer, fixed_t[i], random_t[i], i))
+
+            if i > 5:  # remove edge effects
+                t_max_outer.append(max(abs(welsh_t_outer)))
 
     if visualize:
         plt.plot(welsh_t_outer)

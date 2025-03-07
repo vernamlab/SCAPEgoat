@@ -605,7 +605,7 @@ class Experiment:
         return snr
 
 
-    def calculate_t_test(self, fixed_dataset: str, random_dataset: str, visualize: bool = False, save_data: bool = False, save_graph: bool = False) -> (np.ndarray, np.ndarray):
+    def calculate_t_test(self, fixed_dataset: str, random_dataset: str, partition:bool, index:int, start_index:int, end_index:int, visualize: bool = False, save_data: bool = False, save_graph: bool = False) -> (np.ndarray, np.ndarray):
         """
         Integrated t-test metric.
         :param fixed_dataset: The name of the dataset containing the fixed trace set
@@ -622,8 +622,6 @@ class Experiment:
         :rtype: np.ndarray
         """
 
-        rand = self.dataset[sanitize_input(random_dataset)].read_all()
-        fixed = self.dataset[sanitize_input(fixed_dataset)].read_all()
 
         if save_graph:
             path_created_t = False
@@ -659,13 +657,32 @@ class Experiment:
         else:
             path = None
 
-        t, t_max = t_test_tvla(fixed, rand, visualize=visualize, visualization_paths=path)
+        if partition:
+            if index is not None:
+                rand = self.get_dataset(random_dataset, partition=True, index=index)
+                fixed = self.get_dataset(fixed_dataset, partition=True, index=index)             
+                t, t_max = t_test_tvla(fixed, rand, visualize=visualize, visualization_paths=path) 
+            else:
+                t, t_max = t_test_tvla(exp=self, fixed_path=fixed_dataset, rand_path=random_dataset, partition=True, start_index=start_index, end_index=end_index, visualize=visualize, visualization_paths=path) 
 
-        if save_data:
-            self.add_dataset(f"t_test_{random_dataset}_{fixed_dataset}", t, datatype="float32")
-            self.add_dataset(f"t_max_{random_dataset}_{fixed_dataset}", t_max, datatype="float32")
+        else:
+            rand = self.dataset[sanitize_input(random_dataset)].read_all()
+            fixed = self.dataset[sanitize_input(fixed_dataset)].read_all()
+            t, t_max = t_test_tvla(fixed, rand, visualize=visualize, visualization_paths=path) 
+
+
+
+        if save_data: #remove partition from saving
+            if partition:
+                self.add_dataset(f"t_test_{random_dataset}_{fixed_dataset}", t, datatype="float32",partition=True, trace_per_partition=len(fixed_dataset))
+                self.add_dataset(f"t_max_{random_dataset}_{fixed_dataset}", t_max, datatype="float32",partition=True, trace_per_partition=len(fixed_dataset))
+
+            else:
+                self.add_dataset(f"t_test_{random_dataset}_{fixed_dataset}", t, datatype="float32")
+                self.add_dataset(f"t_max_{random_dataset}_{fixed_dataset}", t_max, datatype="float32")
 
         return t, t_max
+
 
     def calculate_correlation(self, predicted_dataset_name: str, partition:bool, index:int, start_index:int, end_index:int, observed_dataset_name: str, visualize: bool = False, save_data: bool = False, save_graph: bool = False) -> np.ndarray:
         """
