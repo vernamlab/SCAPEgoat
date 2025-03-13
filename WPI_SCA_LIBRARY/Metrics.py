@@ -14,7 +14,8 @@ from tqdm import *
 from collections.abc import *
 from numbers import Number
 import multiprocessing as mp
-from WPI_SCA_LIBRARY.LeakageModels import Sbox
+# from WPI_SCA_LIBRARY.LeakageModels import Sbox
+from LeakageModels import Sbox
 
 
 def signal_to_noise_ratio(labels: dict, visualize: bool = False, visualization_path: any = None) -> np.ndarray:
@@ -101,7 +102,7 @@ def unmasked_sbox_output_intermediate(keys: np.ndarray, plaintexts: np.ndarray) 
     return Sbox[keys ^ plaintexts]
 
 
-def t_test_tvla(fixed_t: np.ndarray, random_t: np.ndarray,  exp:any ,partition:bool, fixed_path:str, random_path:str,start_index:int, end_index:int,visualize: bool = False,
+def t_test_tvla(fixed_t: any, random_t: any,  exp:any ,partition:bool=False, index:int=None, start_index:int=None, end_index:int=None,visualize: bool = False,
                 visualization_paths: tuple = None) -> (np.ndarray, np.ndarray):
     """
     Computes the t-statistic and t-max between fixed and random trace sets. T-statistic magnitudes above or below
@@ -127,11 +128,9 @@ def t_test_tvla(fixed_t: np.ndarray, random_t: np.ndarray,  exp:any ,partition:b
     new_sr_outer = []
     t_max_outer = []
     number =0
-    fixed_t = np.array(fixed_t, dtype=np.float64)
-    random_t = np.array(random_t, dtype=np.float64)
 
-    if len(fixed_t) != len(random_t):
-        raise ValueError("Length of fixed_t and random_t must be equal")
+
+
 
     def t_test_intermediate(mf_old, mr_old, sf_old, sr_old, new_tf, new_tr, n):
         """
@@ -166,22 +165,30 @@ def t_test_tvla(fixed_t: np.ndarray, random_t: np.ndarray,  exp:any ,partition:b
 
             return welsh_t, new_mr, new_mf, new_sf, new_sr
     if partition:
+        fixed_path = fixed_t
+        random_path = random_t
         for index in range(start_index, end_index + 1):
-            fixed_t = exp.self.get_dataset(fixed_path, partition=True, index=index)
-            random_t = exp.self.get_dataset(random_path, partition=True, index=index)
-            
-            for i in tqdm(range(len(random_t)), desc="Calculating T-Test"):
+            print(f"{fixed_t},{index},{fixed_path},{exp}")
+            fixed_tm = exp.get_dataset(fixed_path, partition=True, index=index).read_all()
+            random_tm = exp.get_dataset(random_path, partition=True, index=index).read_all()
+            if len(fixed_tm) != len(random_tm):
+                raise ValueError("Length of fixed_t and random_t must be equal")
+            for i in tqdm(range(len(random_tm)), desc="Calculating T-Test"):
                 welsh_t_outer, new_mr_outer, new_mf_outer, new_sf_outer, new_sr_outer = (
-                    t_test_intermediate(new_mf_outer, new_mr_outer, new_sf_outer, new_sr_outer, fixed_t[i], random_t[i], number))
+                    t_test_intermediate(new_mf_outer, new_mr_outer, new_sf_outer, new_sr_outer, fixed_tm[i], random_tm[i], number))
 
                 if i > 5:  # remove edge effects
                     t_max_outer.append(max(abs(welsh_t_outer)))
                 
                 number = number + 1
 
-            np.delete fixed_t
-            np.delete random_t
+            del fixed_tm
+            del random_tm
     else:
+        fixed_t = np.array(fixed_t, dtype=np.float64)
+        random_t = np.array(random_t, dtype=np.float64)
+        if len(fixed_t) != len(random_t):
+            raise ValueError("Length of fixed_t and random_t must be equal")
         for i in tqdm(range(len(random_t)), desc="Calculating T-Test"):
             welsh_t_outer, new_mr_outer, new_mf_outer, new_sf_outer, new_sr_outer = (
                 t_test_intermediate(new_mf_outer, new_mr_outer, new_sf_outer, new_sr_outer, fixed_t[i], random_t[i], i))
