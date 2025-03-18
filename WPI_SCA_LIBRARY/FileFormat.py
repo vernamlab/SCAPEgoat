@@ -694,7 +694,7 @@ class Experiment:
         else:
             rand = self.dataset[sanitize_input(random_dataset)].read_all()
             fixed = self.dataset[sanitize_input(fixed_dataset)].read_all()
-            t, t_max = t_test_tvla(fixed, rand, visualize=visualize, visualization_paths=path) 
+            t, t_max = t_test_tvla(fixed, rand, self, visualize=visualize, visualization_paths=path) 
 
 
 
