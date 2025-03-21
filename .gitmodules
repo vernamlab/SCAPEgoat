@@ -1,0 +1,3 @@
+[submodule "cwtvla-folder"]
+	path = cwtvla-folder
+	url = https://github.com/newaetech/chipwhisperer-tvla.git
