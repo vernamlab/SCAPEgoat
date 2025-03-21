@@ -8,7 +8,9 @@ from datetime import date
 
 import numpy as np
 
-from WPI_SCA_LIBRARY.Metrics import *
+# from WPI_SCA_LIBRARY.Metrics import *
+from Metrics import *
+from DPA import *
 
 """
 File: FileFormat.py
@@ -420,7 +422,7 @@ class Experiment:
     #     return self.dataset[dataset_name]
     
     
-    def get_dataset(self, dataset_name: str, partition:bool, index:int, start_index:int, end_index:int) -> 'Dataset':    
+    def get_dataset(self, dataset_name: str, partition:bool = False, index:int = -1) -> 'Dataset':    
         """
         Get a dataset from a given experiment.
         :param dataset_name: The name of the requested dataset
@@ -429,47 +431,95 @@ class Experiment:
         :type partition: bool
         :param index: The index of the specific partition to retrieve
         :type index: int
-        :param start_index: The starting index for concatenating partitions
-        :type start_index: int
-        :param end_index: The ending index for concatenating partitions
-        :type end_index: int
         :raises ValueError: If a specified partition does not exist.
         :returns: The requested dataset. None if it is not found.
         :rtype: Dataset. None if not found.
         """
-        if start_index is None:
-            start_index = 0
-        if end_index is None:
-            end_index = -1
-        
         if partition:
-            if index is None:
-                dataset_name = sanitize_input(dataset_name)
-                # partition_name = f"{dataset_name}_p{start_index}"
-                concatenated_data = []
-                for i in range(start_index, end_index + 1):
-                    partition_name = f"{dataset_name}_p{i}"
-                    if partition_name in self.dataset:
-                        concatenated_data.append(self.dataset[partition_name].read_all())
-                    else:
-                        raise ValueError(f"Partition {partition_name} does not exist.")
-                return np.concatenate(concatenated_data)
-            if index:
+            if index == -1:
+                raise ValueError("Please provide index")
+                return 
+            if index>=0:
                 dataset_name = sanitize_input(dataset_name)
                 partition_name = f"{dataset_name}_p{index}"
-                return self.dataset[partition_name]         
+                if partition_name in self.dataset:
+                    return self.dataset[partition_name] 
+                else:
+                    raise ValueError(f"Partition {partition_name} does not exist.")      
         else:
             dataset_name = sanitize_input(dataset_name)
-            return self.dataset[dataset_name]    
+            return self.dataset[dataset_name]   
+        
+    def get_partition_dataset(self, dataset_name: str, partition: bool = True, index_range: tuple = (None, None)) -> np.ndarray:
+        """
+        Get a dataset from a given experiment, with a start and end index passed as a range tuple.
+        :param dataset_name: The name of the requested dataset
+        :type dataset_name: str
+        :param partition: Flag indicating whether to retrieve a partitioned dataset
+        :type partition: bool
+        :param range_tuple: A tuple (start_index, end_index) specifying the range for concatenating partitions
+        :type range_tuple: tuple
+        :raises ValueError: If a specified partition does not exist.
+        :returns: The requested dataset. None if it is not found.
+        :rtype: np.ndarray. None if not found.
+        """
+        # Unpack the tuple to get start_index and end_index
+        start_index, end_index = index_range
+        
+        if start_index is None:
+            start_index = 0
+        if end_index is None or end_index < start_index:
+            end_index = - 1
 
-    def delete_dataset(self, dataset_name: str) -> None:
+        dataset_name = sanitize_input(dataset_name)
+        concatenated_data = []
+
+        for i in range(start_index, end_index + 1):
+            partition_name = f"{dataset_name}_p{i}"
+            if partition_name in self.dataset:
+                concatenated_data.append(self.dataset[partition_name].read_all())
+            else:
+                raise ValueError(f"Partition {partition_name} does not exist.")
+
+        return np.concatenate(concatenated_data)
+
+    def delete_dataset(self, dataset_name: str,  partition:bool = False, index:int = None, index_range: tuple = (None, None)) -> None:
+            """
+            Deletes a dataset and all its contents. Confirmation required.
+            :param dataset_name: The name of the dataset to be deleted
+            :type dataset_name: str
+            :returns: None have to put it in for loop to do this for all of the partitions
+            """
+            
+            start_index, end_index = index_range
+
+            if start_index is None:
+                    start_index = 0
+            if end_index is None or end_index < start_index:
+                    end_index = - 1
+
+            if partition:
+                if index is not None:
+                    self.delete_dataset_partition(dataset_name=f"{dataset_name}_p{index}", partition=True, index=index)
+                else:
+                    for i in range(start_index, end_index + 1):
+                        self.delete_dataset_partition(dataset_name=f"{dataset_name}_p{i}")
+            else:
+                self.delete_dataset_partition(dataset_name=dataset_name)
+
+    def delete_dataset_partition(self, dataset_name: str, partition:bool = False, index:int = None) -> None:
         """
         Deletes a dataset and all its contents. Confirmation required.
         :param dataset_name: The name of the dataset to be deleted
         :type dataset_name: str
-        :returns: None
+        :returns: None have to put it in for loop to do this for all of the partitions
         """
         dataset_name = sanitize_input(dataset_name)
+        
+        if dataset_name not in self.dataset:
+            print(f"Partition not found: {dataset_name}")
+            return
+    
         res = sanitize_input(input(
             "You are about to delete {} in experiment {}. Do you want to proceed? [Y/N]: ".format(dataset_name,
                                                                                                   self.name)))
@@ -523,7 +573,7 @@ class Experiment:
         """
         return self.fileFormatParent.path + self.path + "\\" + "visualization" + "\\"
 
-    def calculate_snr(self, traces_dataset: str, intermediate_fcn: Callable, *args: any,  visualize: bool = False, save_data: bool = False, save_graph: bool = False) -> np.ndarray:
+    def calculate_snr(self, traces_dataset: str,intermediate_fcn: Callable, *args: any,  visualize: bool = False, save_data: bool = False, save_graph: bool = False, partition:bool = False, index:int = None, index_range: tuple = (None, None)) -> np.ndarray:
         """
         Integrated signal-to-noise ratio metric.
         :param traces_dataset: The name of the traces dataset
@@ -541,11 +591,18 @@ class Experiment:
         :returns: The SNR metric result
         :rtype: np.ndarray
         """
+        start_index, end_index = index_range
+        
+        traces_dataset = sanitize_input(traces_dataset) 
+#         args = tuple(self.dataset[sanitize_input(x)].read_all() for x in args)
+        if partition:
+            if index is not None:
+                traces = self.get_dataset(traces_dataset, partition=True, index=index).read_all()
+            else:
+                traces = self.get_partition_dataset(traces_dataset, partition=True, index_range=index_range)
+        else:
+            traces = self.dataset[traces_dataset].read_all()
 
-        traces_dataset = sanitize_input(traces_dataset)
-        args = tuple(self.dataset[sanitize_input(x)].read_all() for x in args)
-
-        traces = self.dataset[traces_dataset].read_all()
         labels = organize_snr_label(traces, intermediate_fcn, *args)
 
         if save_graph:
@@ -570,10 +627,11 @@ class Experiment:
 
         if save_data:
             self.add_dataset("{}_snr".format(traces_dataset), snr, "float32")
-
+        
         return snr
 
-    def calculate_t_test(self, fixed_dataset: str, random_dataset: str, visualize: bool = False, save_data: bool = False, save_graph: bool = False) -> (np.ndarray, np.ndarray):
+
+    def calculate_t_test(self, fixed_dataset: str, random_dataset: str, visualize: bool = False, save_data: bool = False, save_graph: bool = False, partition:bool = False, index:int = None, index_range: tuple = (None, None)) -> (np.ndarray, np.ndarray):
         """
         Integrated t-test metric.
         :param fixed_dataset: The name of the dataset containing the fixed trace set
@@ -589,9 +647,7 @@ class Experiment:
         :returns: The t-test metric result
         :rtype: np.ndarray
         """
-
-        rand = self.dataset[sanitize_input(random_dataset)].read_all()
-        fixed = self.dataset[sanitize_input(fixed_dataset)].read_all()
+        start_index, end_index = index_range
 
         if save_graph:
             path_created_t = False
@@ -627,7 +683,20 @@ class Experiment:
         else:
             path = None
 
-        t, t_max = t_test_tvla(fixed, rand, visualize=visualize, visualization_paths=path)
+        if partition:
+            if index is not None:
+                rand = self.get_dataset(random_dataset, partition=True, index=index).read_all()
+                fixed = self.get_dataset(fixed_dataset, partition=True, index=index).read_all()            
+                t, t_max = t_test_tvla(fixed, rand,self,  visualize=visualize, visualization_paths=path) 
+            else:
+                t, t_max = t_test_tvla(exp=self, fixed_t=fixed_dataset, random_t=random_dataset, partition=True, start_index=start_index, end_index=end_index, visualize=visualize, visualization_paths=path) 
+
+        else:
+            rand = self.dataset[sanitize_input(random_dataset)].read_all()
+            fixed = self.dataset[sanitize_input(fixed_dataset)].read_all()
+            t, t_max = t_test_tvla(fixed, rand, self, visualize=visualize, visualization_paths=path) 
+
+
 
         if save_data:
             self.add_dataset(f"t_test_{random_dataset}_{fixed_dataset}", t, datatype="float32")
@@ -635,7 +704,8 @@ class Experiment:
 
         return t, t_max
 
-    def calculate_correlation(self, predicted_dataset_name: str, observed_dataset_name: str, visualize: bool = False, save_data: bool = False, save_graph: bool = False) -> np.ndarray:
+
+    def calculate_correlation(self, predicted_dataset_name: any, observed_dataset_name: str, order:int, window_size_fma: int, intermediate_fcn: Callable, *args: any, visualize: bool = False, save_data: bool = False, save_graph: bool = False, partition:bool = False, index:int = None, index_range: tuple = (None, None)) -> np.ndarray:
         """
         Integrated correlation metric.
         :param predicted_dataset_name: The name of the dataset containing the predicted leakage
@@ -651,9 +721,18 @@ class Experiment:
         :returns: The correlation metric result
         :rtype: np.ndarray
         """
-
-        predicted = self.get_dataset(predicted_dataset_name).read_all()
-        observed = self.get_dataset(observed_dataset_name).read_all()
+        start_index, end_index = index_range
+        
+        if partition:
+            if index is not None:
+                observed = self.get_dataset(observed_dataset_name, partition=True, index=index).read_all()
+            else:
+                observed = self.get_partition_dataset(observed_dataset_name, partition=True, index_range=index_range)
+        else:
+#             predicted = self.get_dataset(predicted_dataset_name).read_all()
+            observed = self.get_dataset(observed_dataset_name).read_all()
+    
+        num_traces = len(observed)
 
         if save_graph:
             path_created = False
@@ -673,8 +752,23 @@ class Experiment:
         else:
             path = None
 
-        corr = pearson_correlation(predicted, observed, visualize=visualize, visualization_path=path)
+        for k in range(0, 255):
+            predicted = intermediate_fcn(k, num_traces, *args)
+#             predicted = compute_hw(k, num_traces, x0, x3, x4, target_byte=0)
+#             calculate_dpa(traces, iv, order=1, key_guess=0, window_size_fma=5, num_of_traces=0):
+            corr = calculate_dpa(observed, predicted, order, window_size_fma, num_traces, visualize=visualize, visualization_path= path)
+#             corr = pearson_correlation(predicted, observed, visualize=visualize, visualization_path=path)
 
+        if visualize:
+            plt.legend(title="Correct Key")
+            plt.title("Correlation Coefficients for Key Guesses 40 to 50 for Byte 0")
+            plt.xlabel("Sample")
+            plt.ylabel("Correlation")
+            plt.grid()
+            if path is not None:
+                plt.savefig(path)
+            plt.show()
+        
         if save_data:
             self.add_dataset(f"corr_{predicted_dataset_name}_{observed_dataset_name}", corr, datatype="float32")
 

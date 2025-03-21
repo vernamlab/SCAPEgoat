@@ -49,11 +49,12 @@ class CWScope:
         self.scope.dis()
         self.target.dis()
 
-    def standard_capture_traces(self, num_traces: int,
+    def standard_capture_traces(self, num_traces: int, partition:bool, trace_per_partition:int,
                                 experiment_keys: list = None,
                                 experiment_texts: list = None,
                                 fixed_key: bool = True,
-                                fixed_pt: bool = False) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
+                                fixed_pt: bool = False, key_name:str=keys, text_name:str=texts, cipher_name:str=ciphers, traces_name:str=traces,
+                                 ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
         """
         Capture procedure for ChipWhisperer devices. Will return a specified number of traces and the data associated
         with the collection.
@@ -123,15 +124,35 @@ class CWScope:
             # append arrays if trace successfully captured
             if trace is None:
                 continue
-
-            traces[i] = trace.wave
-            keys[i] = trace.key
-            texts[i] = trace.textin
-            ciphertexts[i] = trace.textout
-
+            
+            if partition:
+                num_partitions = num_traces // trace_per_partition
+                for i in range(num_partitions):
+                    partition_data = trace.wave[i * trace_per_partition:(i + 1) * trace_per_partition]
+                    partition_name = f"{traces_name}_p{i}"
+                    dataset = self.add_dataset_internal(partition_name, existing=False, dataset=None)
+                    dataset.add_data(partition_data, datatype)
+                    partition_data = trace.key[i * trace_per_partition:(i + 1) * trace_per_partition]
+                    partition_name = f"{key_name}_p{i}"
+                    dataset = self.add_dataset_internal(partition_name, existing=False, dataset=None)
+                    dataset.add_data(partition_data, datatype)
+                    partition_data = trace.textin[i * trace_per_partition:(i + 1) * trace_per_partition]
+                    partition_name = f"{text_name}_p{i}"
+                    dataset = self.add_dataset_internal(partition_name, existing=False, dataset=None)
+                    dataset.add_data(partition_data, datatype)
+                    partition_data = trace.textout[i * trace_per_partition:(i + 1) * trace_per_partition]
+                    partition_name = f"{cipher_name}_p{i}"
+                    dataset = self.add_dataset_internal(partition_name, existing=False, dataset=None)
+                    dataset.add_data(partition_data, datatype)
+            else:
+                traces[i] = trace.wave
+                keys[i] = trace.key
+                texts[i] = trace.textin
+                ciphertexts[i] = trace.textout
+     
         return traces, keys, texts, ciphertexts
 
-    def capture_traces_tvla(self, num_traces: int, group_a_keys: list = None, group_a_texts: list= None,
+    def capture_traces_tvla(self, num_traces: int, partition:bool, trace_per_partition:int, group_a_keys: list = None, group_a_texts: list= None,
                             group_b_keys: list = None, group_b_texts: list = None,
                             ktp: any = cwtvla.ktp.FixedVRandomText()) -> (np.ndarray, np.ndarray):
         """
@@ -166,7 +187,14 @@ class CWScope:
 
             trace = cw.capture_trace(self.scope, self.target, pt, key)
             if trace is not None:
-                fixed_traces[i] = trace.wave
+                if partition:
+                    num_partitions = num_traces // trace_per_partition
+                    for i in range(num_partitions):
+                        partition_data = trace.wave[i * trace_per_partition:(i + 1) * trace_per_partition]
+                        partition_name = f"{fixed_traces}_p{i}"
+                        dataset = self.add_dataset_internal(partition_name, existing=False, dataset=None)
+                        dataset.add_data(partition_data, datatype)
+                else: fixed_traces[i] = trace.wave
 
             # capture trace from random group
             if group_b_keys is None or group_b_texts is None:
@@ -177,7 +205,14 @@ class CWScope:
 
             trace = cw.capture_trace(self.scope, self.target, pt, key)
             if trace is not None:
-                rand_traces[i] = trace.wave
+                if partition:
+                    num_partitions = num_traces // trace_per_partition
+                    for i in range(num_partitions):
+                        partition_data = trace.wave[i * trace_per_partition:(i + 1) * trace_per_partition]
+                        partition_name = f"{rand_traces}_p{i}"
+                        dataset = self.add_dataset_internal(partition_name, existing=False, dataset=None)
+                        dataset.add_data(partition_data, datatype)
+                else: rand_traces[i] = trace.wave
 
         return fixed_traces, rand_traces
 

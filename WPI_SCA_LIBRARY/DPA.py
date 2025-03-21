@@ -1,6 +1,7 @@
 #The second order DPA code is inspired by https://github.com/ermin-sakic/second-order-dpa by Ermin Sakic
 import numpy as np
 import math
+import matplotlib.pyplot as plt
 
 
 def intermediate_value(out):
@@ -30,27 +31,30 @@ def calculate_window_averages(traces, window_size=5, traces_max=0):
     return fma
 
 
-def calculate_dpa(traces, iv, order=1, key_guess=0, window_size_fma=5, num_of_traces=0):
+def calculate_dpa(traces, iv, order=1, window_size_fma=5, num_of_traces=0, visualize: bool = False, visualization_path: any = None):
     if order == 1:
-        max_cpa = [0] * 1
+        max_cpa = []
 
         num_trace = len(traces)
 
         t_bar = np.mean(traces, axis=0)
         o_t = std_dev(traces, t_bar)
 
-        hws = np.array([[intermediate_value(textout) for textout in iv[0:num_trace]]]).transpose()
+        hws = np.array([iv]).transpose()
         hws_bar = np.mean(hws, axis=0)
 
         o_hws = std_dev(hws, hws_bar)
         correlation = cov(traces, t_bar, hws, hws_bar)
         cpa_output = correlation / (o_t * o_hws)
 
-        max_cpa[key_guess] = max(abs(cpa_output))
+        max_cpa = max(abs(cpa_output))
 
         guess = np.argmax(max_cpa)
-        guess_corr = max(max_cpa)
-
+        guess_corr = max_cpa
+        
+        if visualize:
+            plt.plot(cpa_output)
+            
         return cpa_output, guess_corr, guess
 
     if order == 2:
