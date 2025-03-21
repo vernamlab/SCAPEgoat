@@ -54,7 +54,7 @@ Documentation: https://vernamlab.org/SCApeGoat
 
 ## Usage
 
-The EMSCA process is divided into two main parts: capturing and post-processing.
+SCAPEgoat supports both trace capturing and post-processing.
 
 ### Capturing
 
