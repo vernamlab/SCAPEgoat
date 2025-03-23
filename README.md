@@ -3,6 +3,7 @@
 SCAPEgoat addresses issues in existing toolkits used in the entire SCA chain through simple file structures, support for standard capture hardware, and a post-processing software suite. The idea behind the design of SCAPEgoat (SCA with high Performance Evaluation + WPI's mascot that is a goat) is to create modules corresponding to (virtually all) steps taken in SCA. The modular nature of SCAPEgoat enables the user to enjoy each module separately or as a complete framework. 
 Moreover, SCAPEgoat introduces memory efficiency, especially regarding RAM usage for large datasets, making our tool ideal for newcomers. 
 
+Paper: https://eprint.iacr.org/2025/499.pdf
 Documentation: https://vernamlab.org/SCApeGoat
 
 ## Table of Contents
@@ -29,8 +30,8 @@ Documentation: https://vernamlab.org/SCApeGoat
    - Follow the installation instructions in the [ChipWhisperer documentation](https://chipwhisperer.readthedocs.io/en/latest/).
    - *Note*: This step is only necessary to capture new traces.
 
-2. **Clone the SCAPEgoat Library**:
-   - Clone the [SCAPEgoat library](https://github.com/vernamlab/SCApeGoat) into the ChipWhisperer directory.
+2. **Clone the Required Library**:
+   - Clone the cwtvla folder from the [ChipWhisperer-TVLA repository](https://github.com/newaetech/chipwhisperer-tvla) into the ChipWhisperer directory.
    - Set the appropriate path for the imports in the Jupyter Notebook.
 
 3. **Download Traces**:
@@ -46,11 +47,10 @@ Documentation: https://vernamlab.org/SCApeGoat
    
 
 4. **Organize Notebooks and Traces**:
-   - Place the `CEMA_scapegoat` Jupyter Notebook within the downloaded traces directory, ensuring it is at the same level as the `CEMA` folder (acts as the parent directory).
-   - Ensure the `CEMA_functions` Jupyter Notebook is located alongside the `CEMA_scapegoat` notebook or set an appropriate path.
-
+   - Place the main Jupyter Notebook within the appropriate directory, ensuring it is correctly positioned relative to any required folders or dependencies.
+   - Verify that any supporting notebooks or scripts are located in the correct directory or update file paths accordingly.
 5. **Verify Import Paths**:
-   - Confirm that all import paths are correct in the `CEMA_scapegoat` and `setup_script` notebook to ensure seamless execution.
+   - Ensure all import paths are correctly set in relevant notebooks or scripts to prevent execution errors.
 
 ## Usage
 
