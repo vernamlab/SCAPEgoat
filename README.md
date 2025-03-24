@@ -53,6 +53,7 @@ Add the SCAPEgoat library to your system path to ensure smooth usability:
     ```python
     import sys
     sys.path.append("/path/to/SCAPEgoat")
+    ```
 This allows scripts and notebooks to access SCAPEgoat modules without manual path modifications.
 
 ## **Usage**
@@ -76,9 +77,10 @@ SCAPEgoat allows users to manage experiments efficiently and perform post-proces
 
 For actual code examples and further guidance, please refer to the **demo** folder in the SCAPEgoat repository. It contains sample code that demonstrates how to set up experiments, manage datasets, and perform post-processing.
 
-You can also explore datasets from the following sources for example usage:
-     - **EM for Good**: A dataset for the EM traces collected from unmasked AES implementation on CW-lite. You can find it in the [EM for Good GitHub repository](https://github.com/vernamlab/EM-for-good).
-     - **Bake it Till You Make It**: A dataset where a binary neural network is put under stress by increasing temperature. You can find it in the [Bake it Till You Make It GitHub repository](https://github.com/vernamlab/Bake-it-till-you-make-it).
+You can also explore datasets from the following sources for example, usage:
+
+   - **EM for Good**: A dataset for the EM traces collected from unmasked AES implementation on CW-lite. You can find it in the [EM for Good GitHub repository](https://github.com/vernamlab/EM-for-good).
+   - **Bake it Till You Make It**: A dataset where a binary neural network is put under stress by increasing temperature. You can find it in the [Bake it Till You Make It GitHub repository](https://github.com/vernamlab/Bake-it-till-you-make-it).
 
 ## **References**
 
