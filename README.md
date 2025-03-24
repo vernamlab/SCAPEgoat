@@ -4,7 +4,7 @@ SCAPEgoat addresses issues in existing toolkits used in the entire SCA chain thr
 Moreover, SCAPEgoat introduces memory efficiency, especially regarding RAM usage for large datasets, making our tool ideal for newcomers. 
 
 Paper: https://eprint.iacr.org/2025/499.pdf
-Documentation: https://vernamlab.org/SCAPEGoat
+Documentation: https://vernamlab.org/SCAPEgoat
 
 ## Table of Contents
 
