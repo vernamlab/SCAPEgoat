@@ -156,9 +156,26 @@ The file framework is split into three separate classes.
 
 
 
-    .. method:: delete_dataset(self, dataset_name: str,  partition:bool = False, index:int = None, index_range: tuple = (None, None)) -> None:
 
-        Deletes a dataset and all its contents. Confirmation required.
+    .. method::get_partition_dataset(self, dataset_name: str, partition: bool = True, index_range: tuple = (None, None)) -> np.ndarray:
+
+        Get a dataset from a given experiment, with a start and end index passed as a range tuple.
+
+        :param dataset_name: The name of the requested dataset
+        :type dataset_name: str
+        :param partition: Flag indicating whether to retrieve a partitioned dataset
+        :type partition: bool
+        :param range_tuple: A tuple (start_index, end_index) specifying the range for concatenating partitions
+        :type range_tuple: tuple
+        :raises ValueError: If a specified partition does not exist.
+        :returns: The requested dataset. None if it is not found.
+        :rtype: np.ndarray. None if not found.
+
+
+    .. method:: delete_dataset(self, dataset_name: str) -> None:
+
+
+        Deletes a dataset and all its contents. Confirmation required. 
 
         :param dataset_name: The name of the dataset to delete.
         :type dataset_name: str
