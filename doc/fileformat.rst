@@ -54,6 +54,7 @@ The file framework is split into three separate classes.
         :type experiment_name: str
         :returns: The requested experiment. None if it does not exist.
         :rtype: Experiment. None if not found.
+        
 
     .. method:: delete_file(self) -> None:
 
@@ -107,7 +108,7 @@ The file framework is split into three separate classes.
         :returns: The experiment's metadata dictionary
         :rtype: dict
 
-    .. method:: add_dataset(self, name: str, data_to_add: np.ndarray, datatype: any) -> 'Dataset':
+    .. method:: add_dataset(self, name: str, data_to_add: np.ndarray, datatype: any,partition:bool,trace_per_partition:int) -> 'Dataset':
 
         Adds a new Dataset to a given Experiment
 
@@ -115,17 +116,45 @@ The file framework is split into three separate classes.
         :type name: str
         :param data_to_add: The NumPy array of data to be added to the new dataset
         :type data_to_add: np.ndarray
-        :returns: The newly created dataset
+        :param datatype: The datatype of the dataset
+        :type datatype: any
+        :param partition: Flag indicating whether to partition the dataset
+        :type partition: bool
+        :param trace_per_partition: Number of traces per partition
+        :type trace_per_partition: int
+        :returns: The newly created Dataset object
         :rtype: Dataset
 
-    .. method:: get_dataset(self, dataset_name: str) -> 'Dataset':
+    .. method:: get_dataset(self, dataset_name: str, partition:bool = False, index:int = -1) -> 'Dataset':
 
         Get a dataset from a given experiment.
 
         :param dataset_name: The name of the requested dataset
         :type dataset_name: str
+        :param partition: Flag indicating whether to retrieve a partitioned dataset
+        :type partition: bool
+        :param index: The index of the specific partition to retrieve
+        :type index: int
+        :raises ValueError: If a specified partition does not exist.
         :returns: The requested dataset. None if it is not found.
         :rtype: Dataset. None if not found.
+        
+
+    .. method:: get_partition_dataset(self, dataset_name: str, partition: bool = True, index_range: tuple = (None, None)) -> np.ndarray:
+
+        Get a dataset from a given experiment, with a start and end index passed as a range tuple.
+
+        :param dataset_name: The name of the requested dataset
+        :type dataset_name: str
+        :param partition: Flag indicating whether to retrieve a partitioned dataset
+        :type partition: bool
+        :param range_tuple: A tuple (start_index, end_index) specifying the range for concatenating partitions
+        :type range_tuple: tuple
+        :raises ValueError: If a specified partition does not exist.
+        :returns: The requested dataset. None if it is not found.
+        :rtype: np.ndarray. None if not found.
+
+
 
 
     .. method::get_partition_dataset(self, dataset_name: str, partition: bool = True, index_range: tuple = (None, None)) -> np.ndarray:
@@ -145,10 +174,17 @@ The file framework is split into three separate classes.
 
     .. method:: delete_dataset(self, dataset_name: str) -> None:
 
+
         Deletes a dataset and all its contents. Confirmation required. 
 
-        :param dataset_name: The name of the dataset to be deleted
+        :param dataset_name: The name of the dataset to delete.
         :type dataset_name: str
+        :param partition: If True, deletes a specific partition or a range of partitions.
+        :type partition: bool
+        :param index: The index of the specific partition to delete (if deleting a single partition).
+        :type index: int, optional
+        :param index_range: A tuple (start_index, end_index) specifying the range of partitions to delete.
+        :type index_range: tuple, optional
         :returns: None
 
     .. method:: query_datasets_with_metadata(self, key: str, value: any, regex: bool = False) -> list['Dataset']:
@@ -170,57 +206,84 @@ The file framework is split into three separate classes.
         :returns: The visualization path of the experiment
         :rtype: str
 
-    .. method:: calculate_snr(self, traces_dataset: str, intermediate_fcn: Callable, *args: any,  visualize: bool = False, save_data: bool = False, save_graph: bool = False) -> np.ndarray:
-
+    .. method:: calculate_snr(self, traces_dataset: str,intermediate_fcn: Callable, *args: any,  visualize: bool = False, save_data: bool = False, save_graph: bool = False, partition:bool = False, index:int = None, index_range: tuple = (None, None)) -> np.ndarray:
+        
         Integrated signal-to-noise ratio metric.
-
-        :param traces_dataset: The name of the traces dataset
+        
+        :param traces_dataset: The name of the dataset containing trace data.
         :type traces_dataset: str
-        :param intermediate_fcn: A callback function that determines how the intermediate values for SNR labels are calculated.
+        :param intermediate_fcn: A function to compute intermediate values used for SNR calculation.
         :type intermediate_fcn: Callable
-        :param *args: Additonal datasets needed for the parameters of the intermediate_fnc.
+        :param *args: Additional datasets required for intermediate function parameters.
         :type *args: any
-        :param visualize: Whether to visualize the result or not
+        :param visualize: Whether to generate a visualization of the SNR results.
         :type visualize: bool
-        :param save_data: Whether to save the metric result as a new dataset or not
+        :param save_data: Whether to store the computed SNR metric as a dataset.
         :type save_data: bool
-        :param save_graph: Whether to save the visualization to the experiments visualization folder or not
+        :param save_graph: Whether to save the visualization to the experiments folder.
         :type save_graph: bool
-        :returns: The SNR metric result
+        :param partition: Whether to compute SNR on a specific partition of the dataset.
+        :type partition: bool
+        :param index: Index of the partition to use if applicable.
+        :type index: int
+        :param index_range: The start and end indices for dataset partitioning.
+        :type index_range: tuple
+        :returns: The computed SNR metric as a NumPy array.
         :rtype: np.ndarray
 
-    .. method:: calculate_t_test(self, fixed_dataset: str, random_dataset: str, visualize: bool = False, save_data: bool = False, save_graph: bool = False) -> (np.ndarray, np.ndarray):
+
+    .. method:: calculate_t_test(self, fixed_dataset: str, random_dataset: str, visualize: bool = False, save_data: bool = False, save_graph: bool = False, partition:bool = False, index:int = None, index_range: tuple = (None, None)) -> (np.ndarray, np.ndarray):
 
         Integrated t-test metric.
 
-        :param fixed_dataset: The name of the dataset containing the fixed trace set
+        :param fixed_dataset: The dataset containing fixed traces.
         :type fixed_dataset: str
-        :param random_dataset: The name of the dataset containing the random trace set
+        :param random_dataset: The dataset containing random traces.
         :type random_dataset: str
-        :param visualize: Whether to visualize the result or not
+        :param visualize: Whether to generate a visualization of the t-test results.
         :type visualize: bool
-        :param save_data: Whether to save the metric result as a new dataset or not
+        :param save_data: Whether to store the computed t-test results as datasets.
         :type save_data: bool
-        :param save_graph: Whether to save the visualization to the experiments visualization folder or not
+        :param save_graph: Whether to save the visualization to the experiments folder.
         :type save_graph: bool
-        :returns: The t-test metric result
-        :rtype: np.ndarray
+        :param partition: Whether to compute t-test on a specific partition of the dataset.
+        :type partition: bool
+        :param index: Index of the partition to use if applicable.
+        :type index: int
+        :param index_range: The start and end indices for dataset partitioning.
+        :type index_range: tuple
+        :returns: The computed t-test values and maximum t-values as NumPy arrays.
+        :rtype: (np.ndarray, np.ndarray)
 
-    .. method:: calculate_correlation(self, predicted_dataset_name: str, observed_dataset_name: str, visualize: bool = False, save_data: bool = False, save_graph: bool = False) -> np.ndarray:
+    .. method:: calculate_correlation(self, predicted_dataset_name: any, observed_dataset_name: str, order:int, window_size_fma: int, intermediate_fcn: Callable, *args: any, visualize: bool = False, save_data: bool = False, save_graph: bool = False, partition:bool = False, index:int = None, index_range: tuple = (None, None)) -> np.ndarray:
 
         Integrated correlation metric.
 
-        :param predicted_dataset_name: The name of the dataset containing the predicted leakage
+        :param predicted_dataset_name: The name of the dataset containing predicted leakage values.
         :type predicted_dataset_name: str
-        :param observed_dataset_name: The name of the dataset containing the observed leakage
+        :param observed_dataset_name: The name of the dataset containing observed leakage values.
         :type observed_dataset_name: str
-        :param visualize: Whether to visualize the result or not
+        :param order: The order of the correlation analysis.
+        :type order: int
+        :param window_size_fma: The window size for filtering moving averages.
+        :type window_size_fma: int
+        :param intermediate_fcn: A function to compute intermediate values used for correlation analysis.
+        :type intermediate_fcn: Callable
+        :param *args: Additional datasets required for intermediate function parameters.
+        :type *args: any
+        :param visualize: Whether to generate a visualization of the correlation results.
         :type visualize: bool
-        :param save_data: Whether to save the metric result as a new dataset or not
+        :param save_data: Whether to store the computed correlation metric as a dataset.
         :type save_data: bool
-        :param save_graph: Whether to save the visualization to the experiments visualization folder or not
+        :param save_graph: Whether to save the visualization to the experiments folder.
         :type save_graph: bool
-        :returns: The correlation metric result
+        :param partition: Whether to compute correlation on a specific partition of the dataset.
+        :type partition: bool
+        :param index: Index of the partition to use if applicable.
+        :type index: int
+        :param index_range: The start and end indices for dataset partitioning.
+        :type index_range: tuple
+        :returns: The computed correlation metric as a NumPy array.
         :rtype: np.ndarray
 
 
