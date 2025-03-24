@@ -50,10 +50,12 @@ Follow these steps to set up SCAPEgoat:
 
 ### **4. Ensure Proper Import Paths**  
 Add the SCAPEgoat library to your system path to ensure smooth usability:  
-    ```python
-    import sys
-    sys.path.append("/path/to/SCAPEgoat")
-    ```
+
+  ```python
+  import sys
+  sys.path.append("/path/to/SCAPEgoat")
+  ```
+
 This allows scripts and notebooks to access SCAPEgoat modules without manual path modifications.
 
 ## **Usage**
