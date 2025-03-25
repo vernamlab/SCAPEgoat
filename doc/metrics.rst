@@ -49,23 +49,35 @@ Each metric is a standalone function and requires minimal setup to utilize.
     :return: A list containing all intermediate values
     :rtype: np.ndarray
 
-.. py:function:: t_test_tvla(fixed_t: np.ndarray, random_t: np.ndarray, visualize: bool = False, visualization_paths: tuple = None) -> (np.ndarray, np.ndarray):
+.. py:function:: t_test_tvla(fixed_t: any, random_t: any,  exp:any ,partition:bool=False, index:int=None, start_index:int=None, end_index:int=None,visualize: bool = False,visualization_paths: tuple = None) -> (np.ndarray, np.ndarray):
 
-    Computes the t-statistic and t-max between fixed and random trace sets. T-statistic magnitudes above or below
-    \|th\| = 4.5 indicate cryptographic vulnerabilities.
+    Performs a t-test to assess the statistical difference between fixed and random trace sets.
+    T-statistic values exceeding ±4.5 may indicate cryptographic vulnerabilities.
 
-    :param random_t: The random trace set
-    :type random_t: np.ndarray 
-    :param fixed_t: The fixed trace set
-    :type fixed_t: np.ndarray 
-    :param visualize: Whether to visualize the result
+    :param fixed_t: The set of fixed traces.
+    :type fixed_t: np.ndarray
+    :param random_t: The set of random traces.
+    :type random_t: np.ndarray
+    :param exp: Experimental data or configuration settings.
+    :type exp: any
+    :param partition: Whether to partition the data (default: False).
+    :type partition: bool
+    :param index: Specific index for analysis, if applicable.
+    :type index: int, optional
+    :param start_index: The starting index for analysis, if applicable.
+    :type start_index: int, optional
+    :param end_index: The ending index for analysis, if applicable.
+    :type end_index: int, optional
+    :param visualize: Whether to generate visualizations of the results.
     :type visualize: bool
-    :param visualization_paths: The paths to be used to save the t-statistic (first idx) and t-max visualizations (second idx)
-    :type visualization_paths: tuple
-    :return: The t-statistic at each time sample and t-max at each trace as a tuple of numpy arrays
+    :param visualization_paths: Paths to save the t-statistic (first index) and t-max (second index) visualizations.
+    :type visualization_paths: tuple, optional
+    :return: A tuple containing the t-statistic for each time sample and t-max for each trace.
     :rtype: (np.ndarray, np.ndarray)
-    :raises ValueError: if fixed_t and random_t do not have the same length
+    :raises ValueError: If fixed_t and random_t do not have the same length.
+    
     :Authors: Dev Mehta (dmmehta2@wpi.edu), Samuel Karkache (swkarkache@wpi.edu)
+    
 
 .. py:function:: pearson_correlation(predicted_leakage: np.ndarray, observed_leakage: np.ndarray, visualize: bool = False, visualization_path: any = None) -> np.ndarray:
 
