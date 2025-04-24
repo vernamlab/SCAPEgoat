@@ -23,7 +23,6 @@ SCAPEgoat provides a robust and modular approach to side-channel analysis with t
   - Signal-to-Noise Ratio (SNR)  
   - Test Vector Leakage Assessment (TVLA)  
   - Correlation Power Analysis (CPA)  
-  - t-tests for leakage detection  
 - 📂 **Partitioned Data Analysis** – Perform trace analysis based on specific indices or index ranges.  
 - 🔗 **Seamless Hardware Integration** – Supports ChipWhisperer and other standard SCA tools for trace collection.  
 
