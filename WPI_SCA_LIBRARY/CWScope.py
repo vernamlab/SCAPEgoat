@@ -53,7 +53,7 @@ class CWScope:
                                 experiment_keys: list = None,
                                 experiment_texts: list = None,
                                 fixed_key: bool = True,
-                                fixed_pt: bool = False, key_name:str=keys, text_name:str=texts, cipher_name:str=ciphers, traces_name:str=traces,
+                                fixed_pt: bool = False, key_name:str=None, text_name:str=None, cipher_name:str=None, traces_name:str=None,
                                  ) -> (np.ndarray, np.ndarray, np.ndarray, np.ndarray):
         """
         Capture procedure for ChipWhisperer devices. Will return a specified number of traces and the data associated
