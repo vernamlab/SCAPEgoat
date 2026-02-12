@@ -16,6 +16,7 @@ from numbers import Number
 import multiprocessing as mp
 # from WPI_SCA_LIBRARY.LeakageModels import Sbox
 from LeakageModels import Sbox
+from WPI_SCA_LIBRARY.MRE import *
 
 
 def signal_to_noise_ratio(labels: dict, visualize: bool = False, visualization_path: any = None) -> np.ndarray:
@@ -396,3 +397,56 @@ def success_rate_guessing_entropy(correct_keys: np.ndarray, experiment_ranks: np
     guessing_entropy = guessing_entropy / num_experiments
 
     return success_rate, guessing_entropy
+
+
+def DecomposeUncertainty(Variational_models: list, traces: np.ndarray, Predictions:  np.ndarray,
+                                  Labels: np.ndarray) -> (np.ndarray, np.ndarray, np.ndarray):
+    """
+    Decomposes predictive uncertainty into aleatoric and epistemic components
+    using multiple variational model forward passes.
+
+    :param Variational_models: List of variational models (e.g., MC dropout or ensemble models)
+    :type Variational_models: list
+    :param traces: Input traces used for prediction
+    :type traces: np.ndarray
+    :param Predictions: Predictive probabilities from the full model (shape: N x 256)
+    :type Predictions: np.ndarray
+    :param Labels: True class labels for each trace (shape: N)
+    :type Labels: np.ndarray
+    :return: Aleatoric uncertainty (A), Epistemic uncertainty (E), and Predictive entropy (P)
+    :rtype: (np.ndarray, np.ndarray, np.ndarray)
+    :Authors: Mohammad N. (WPI)
+    """
+
+    number_of_points = traces.shape[0]
+    pred_E = np.zeros((len(Variational_models),number_of_points,256))
+    
+    
+    for j in range(30):
+
+        pred_E[j] = Variational_models[j](traces[:number_of_points])
+     
+    ent_E = np.zeros((30,number_of_points))
+
+    for l in range(30):
+        for k in range(number_of_points):
+            ent_E[l,k] =mbre(pred_E[l,k])
+        
+
+
+
+    P = np.zeros((number_of_points,2))
+    A = np.zeros((number_of_points,2))
+    E = np.zeros((number_of_points,2))
+
+    for i in range(number_of_points):
+        P[i, 0] = mbre(Predictions[i]) 
+
+        A[i, 0] = np.mean(ent_E ,axis=0)[i]
+        E[i, 0] = P[i, 0] - A[i, 0]
+        P[i, 1] = A[i, 1] = E[i, 1] = Predictions[i, Labels[i]]
+    
+    
+
+    return A, E, P
+
