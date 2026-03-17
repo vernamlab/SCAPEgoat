@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-
+from sklearn.kernel_approximation import Nystroem 
 
 
 def calculate_gram_mat(x, sigma):
@@ -29,6 +29,20 @@ def renyi_entropy(x,sigma,alpha):
     Returns:
         renyi alpha entropy of x. 
     """
+
+    # for nystrom Nystrom
+
+    if nystrom:
+        X_np = x.detach().cpu().numpy()
+        U, _, _ = np.linalg.svd(X_np[:700], full_matrices=False)  
+        lev_scores = np.sum(U**2, axis=1)
+        landmark_idx = np.random.choice(len(lev_scores), size=landmarks, p=lev_scores/lev_scores.sum(), replace=False)
+        
+        landmarks_ = X_np[landmark_idx]
+        feature_map = Nystroem(kernel='rbf', gamma=1.0/sigma, n_components=landmarks)
+        feature_map.fit(landmarks_)  
+        Phi_np = feature_map.transform(X_np[:800])
+        k = torch.from_numpy(Phi_np).to(x.device)
     
     k = calculate_gram_mat(x,sigma)
     k = k/torch.trace(k) 
