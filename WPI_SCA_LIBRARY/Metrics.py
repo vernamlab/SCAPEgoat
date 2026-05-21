@@ -14,8 +14,8 @@ from tqdm import *
 from collections.abc import *
 from numbers import Number
 import multiprocessing as mp
-# from WPI_SCA_LIBRARY.LeakageModels import Sbox
-from LeakageModels import Sbox
+from WPI_SCA_LIBRARY.LeakageModels import Sbox
+# from LeakageModels import Sbox
 from WPI_SCA_LIBRARY.MRE import *
 
 
